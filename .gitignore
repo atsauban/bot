@@ -1,0 +1,14 @@
+# Ignore WhatsApp auth/session data
+storage/auth/
+
+# Optional: ignore local reminder database (contains chat content)
+# Uncomment if you don't want it in Git
+# storage/data/reminders.db
+
+# Node artifacts
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Env files
+.env

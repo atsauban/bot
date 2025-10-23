@@ -1,0 +1,3 @@
+{"$$indexCreated":{"fieldName":"status","unique":false,"sparse":false}}
+{"$$indexCreated":{"fieldName":"atMs","unique":false,"sparse":false}}
+{"$$indexCreated":{"fieldName":"chatJid","unique":false,"sparse":false}}

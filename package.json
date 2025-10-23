@@ -1,0 +1,30 @@
+{
+  "name": "baileys-whatsapp-bot",
+  "version": "0.1.0",
+  "description": "Bot WhatsApp sederhana berbasis Baileys dengan fitur ping.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc.6",
+    "dotenv": "^16.4.5",
+    "ffmpeg-static": "^5.2.0",
+    "figlet": "^1.7.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "link-preview-js": "^3.1.0",
+    "nedb-promises": "^6.2.3",
+    "pino": "^9.3.2",
+    "pino-pretty": "^10.3.1",
+    "qrcode-terminal": "^0.12.0",
+    "wa-sticker-formatter": "^4.4.4"
+  }
+}
