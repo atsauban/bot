@@ -93,6 +93,37 @@ npm start
 - Saat bot tersambung, scheduler memuat reminder pending dan menjadwalkannya kembali otomatis.
 - Reminder menggunakan zona waktu server. Jika jam sudah lewat, reminder dijadwalkan untuk hari berikutnya.
 
+## Dependensi (kalau `node_modules` tidak tersedia)
+
+Jalankan `npm install` di direktori project untuk memasang semua paket pada `package.json`. Paket utama yang dipakai:
+
+- Runtime & inti
+  - `@whiskeysockets/baileys` — koneksi WhatsApp MD
+  - `dotenv` — muat variabel `.env`
+  - `pino`, `pino-pretty` — logging
+  - `qrcode-terminal` — cetak QR code di terminal
+
+- Media & utilitas
+  - `wa-sticker-formatter` — buat stiker (webp) dari gambar/video
+  - `ffmpeg-static`, `fluent-ffmpeg` — konversi media untuk stiker video (≤12s)
+  - `figlet` — render ASCII art untuk `!ascii`
+
+- Penyimpanan lokal
+  - `nedb-promises` — database file untuk `!reminder`
+
+- AI (opsional)
+  - (Tidak perlu paket tambahan) — `fetch` bawaan Node 18+ ke endpoint Groq (OpenAI-compatible). Set `GROQ_API_KEY`.
+
+- Opsional (disarankan)
+  - `link-preview-js` — menghilangkan warning “url generation failed” dari Baileys saat preview tautan
+  - Salah satu dari: `sharp` atau `jimp` — diperlukan agar `!setpic` (ganti foto grup) bekerja di semua lingkungan
+  - `pm2` (global) — menjalankan bot sebagai service: `npm i -g pm2`
+  - Git LFS (untuk repo besar) — jika Anda ingin melacak aset binary besar di Git
+
+Catatan:
+- Node.js 18+ direkomendasikan (agar `fetch` global tersedia dan kompatibilitas ESM lebih baik).
+- `ffmpeg-static` sudah menyertakan binary ffmpeg; tidak perlu install ffmpeg sistem terpisah.
+
 ## Menjalankan dengan PM2 (opsional)
 ```bash
 npm run pm2:start   # start sebagai service
