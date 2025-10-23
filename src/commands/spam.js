@@ -21,7 +21,7 @@ registerCommand('!spam', async ({ sock, message, text, logger }) => {
 
     for (let i = 0; i < n; i++) {
       try {
-        await sock.sendMessage(chatId, { text: body });
+        await sock.sendMessage(chatId, { text: sanitizeForSpam(body) });
       } catch (e) {
         logger?.error?.({ e, i }, '!spam send error');
         break;
@@ -38,3 +38,15 @@ function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function sanitizeForSpam(text) {
+  // Hindari memicu command handler ketika menspam teks yang diawali '!'
+  // Sisipkan zero-width space setelah '!'
+  const s = String(text);
+  const trimmed = s.trimStart();
+  if (trimmed.startsWith('!')) {
+    // pertahankan spasi di depan
+    const leading = s.slice(0, s.length - trimmed.length);
+    return leading + '!\u200B' + trimmed.slice(1);
+  }
+  return s;
+}

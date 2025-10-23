@@ -9,5 +9,6 @@ import './group.js';
 import './reminder.js';
 import './spam.js';
 import './ai.js';
+import './ttt.js';
 
 export { registerCommand, findCommand } from './registry.js';
