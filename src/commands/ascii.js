@@ -1,5 +1,6 @@
 import figlet from 'figlet';
 import { registerCommand } from './registry.js';
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 
 const figletFonts = {
   list: () => new Promise((resolve, reject) => figlet.fonts((e, f) => (e ? reject(e) : resolve(f)))),
@@ -33,6 +34,34 @@ registerCommand('!ascii-list', async ({ sock, message, text, logger }) => {
 
 registerCommand('!ascii', async ({ sock, message, text, logger }) => {
   try {
+    // Jika ada gambar (di pesan atau quoted), jalankan mode image->ascii
+    const img = findImage(message);
+    if (img) {
+      const arg = text.replace(/^!ascii\s*/i, '').trim();
+      let targetWidth = parseInt(arg, 10);
+      if (!Number.isFinite(targetWidth)) targetWidth = 64; // default
+      targetWidth = Math.max(16, Math.min(120, targetWidth));
+
+      const buf = await downloadImageBuffer(img);
+      const ascii = await convertBufferToAscii(buf, targetWidth);
+      if (!ascii) return; // silent jika gagal
+      const fence = '```';
+      const maxLen = 3500;
+      let chunk = fence + '\n';
+      for (const line of ascii.split('\n')) {
+        if ((chunk + line + '\n' + fence).length > maxLen) {
+          await sock.sendMessage(message.key.remoteJid, { text: chunk + fence }, { quoted: message });
+          chunk = fence + '\n';
+        }
+        chunk += line + '\n';
+      }
+      if (chunk.trim() !== '```') {
+        await sock.sendMessage(message.key.remoteJid, { text: chunk + fence }, { quoted: message });
+      }
+      return;
+    }
+
+    // Mode teks -> ASCII figlet
     const args = text.trim().split(/\s+/).slice(1); // buang '!ascii'
     if (args.length < 2) return; // butuh minimal <font> <teks>
 
@@ -44,11 +73,8 @@ registerCommand('!ascii', async ({ sock, message, text, logger }) => {
     const content = args.slice(usedTokens).join(' ').trim();
     if (!content) return;
 
-    // batasi panjang input agar output tidak meledak
-    const safeContent = content.slice(0, 48);
+    const safeContent = content.slice(0, 48); // batasi input
     const rendered = await figletFonts.text(safeContent, { font: fontName, horizontalLayout: 'default' });
-
-    // batasi panjang pesan
     const maxChars = 3500;
     const out = rendered.length > maxChars ? rendered.slice(0, maxChars) : rendered;
     const monospaced = '```\n' + out + '\n```';
@@ -74,4 +100,85 @@ function resolveFontFromArgs(args, fonts) {
     return fonts.find((f) => f.toLowerCase() === first.toLowerCase());
   }
   return null;
+}
+
+// ========== helper untuk image -> ascii (dipindah dari img2ascii) ==========
+function findImage(message) {
+  const msg = message.message || {};
+  if (msg.imageMessage) return msg.imageMessage;
+  const quoted = msg?.extendedTextMessage?.contextInfo?.quotedMessage || null;
+  return quoted?.imageMessage || null;
+}
+
+async function downloadImageBuffer(imgMsg) {
+  const stream = await downloadContentFromMessage(imgMsg, 'image');
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+async function convertBufferToAscii(buffer, targetWidth = 64) {
+  // Coba jimp dulu
+  let Jimp;
+  try {
+    const mod = await import('jimp');
+    Jimp = mod?.Jimp || mod.default || mod;
+  } catch {}
+  if (Jimp) {
+    try {
+      const img = await Jimp.read(buffer);
+      const { width: w, height: h } = img.bitmap;
+      const ratio = h / w;
+      const targetHeight = Math.max(8, Math.round(ratio * targetWidth * 0.5));
+      img.resize({ w: targetWidth, h: targetHeight });
+      img.grayscale();
+      const chars = ' .:-=+*#%@';
+      let out = '';
+      for (let y = 0; y < targetHeight; y++) {
+        let line = '';
+        for (let x = 0; x < targetWidth; x++) {
+          const color = img.getPixelColor(x, y);
+          const { r, g, b } = Jimp.intToRGBA(color);
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b; // perceptual luminance
+          const idx = Math.max(0, Math.min(chars.length - 1, Math.round((lum / 255) * (chars.length - 1))));
+          line += chars[idx];
+        }
+        out += line + '\n';
+      }
+      return out;
+    } catch {}
+  }
+  // Coba sharp jika jimp tidak tersedia
+  let sharp;
+  try {
+    const mod = await import('sharp');
+    sharp = mod?.default || mod;
+  } catch {}
+  if (sharp) {
+    try {
+      const meta = await sharp(buffer).metadata();
+      const w = meta.width || targetWidth;
+      const h = meta.height || targetWidth;
+      const ratio = h / w;
+      const targetHeight = Math.max(8, Math.round(ratio * targetWidth * 0.5));
+      const { data, info } = await sharp(buffer)
+        .resize(targetWidth, targetHeight)
+        .grayscale()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const chars = ' .:-=+*#%@';
+      let out = '';
+      for (let y = 0; y < info.height; y++) {
+        let line = '';
+        for (let x = 0; x < info.width; x++) {
+          const lum = data[y * info.width + x];
+          const idx = Math.max(0, Math.min(chars.length - 1, Math.round((lum / 255) * (chars.length - 1))));
+          line += chars[idx];
+        }
+        out += line + '\n';
+      }
+      return out;
+    } catch {}
+  }
+  return '';
 }
