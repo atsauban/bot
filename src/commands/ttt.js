@@ -22,7 +22,7 @@ registerCommand('!ttt', async ({ sock, message, text, logger }) => {
     if (sessions.has(chatId)) {
       // Sudah ada game berjalan, tampilkan papan lagi
       const sess = sessions.get(chatId);
-      await sendBoardAsList(sock, chatId, sess, message);
+      await sendBoardText(sock, chatId, sess, message);
       return;
     }
 
@@ -39,7 +39,7 @@ registerCommand('!ttt', async ({ sock, message, text, logger }) => {
       sessions.set(chatId, sess);
       installTurnTimer(sock, chatId, sess, logger);
       const intro = `Tic-Tac-Toe dimulai!\nX: ${mentionOne(sess.players.X)} | O: ${mentionOne(sess.players.O)}\nGiliran: ${mentionOne(sess.turn)}\nPilih kotak:`;
-      await sendBoardAsList(sock, chatId, sess, message, intro);
+      await sendBoardText(sock, chatId, sess, message, intro);
     } else {
       // DM: main vs bot
       const bot = botJid(sock);
@@ -49,7 +49,7 @@ registerCommand('!ttt', async ({ sock, message, text, logger }) => {
       sessions.set(chatId, sess);
       installTurnTimer(sock, chatId, sess, logger);
       const intro = `Tic-Tac-Toe vs Bot dimulai!\nKamu: ${mentionOne(sess.players.X)} (X) | Bot: ${mentionOne(sess.players.O)} (O)\nGiliran: ${mentionOne(sess.turn)}\nPilih kotak:`;
-      await sendBoardAsList(sock, chatId, sess, message, intro);
+      await sendBoardText(sock, chatId, sess, message, intro);
     }
   } catch (err) {
     logger?.error?.({ err }, '!ttt error');
@@ -69,54 +69,48 @@ registerCommand('!ttt-help', async ({ sock, message }) => {
 });
 
 // Handler list selection: rowId = "!ttt-move <n>"
-registerCommand('!ttt-move', async ({ sock, message, text, logger }) => {
+export async function tttHandleNumeric(sock, message, num, logger) {
   try {
     const chatId = message.key.remoteJid;
     const sess = sessions.get(chatId);
-    if (!sess || sess.status !== 'in_progress') return;
+    if (!sess || sess.status !== 'in_progress') return false;
     const sender = senderJid(message);
-    if (!areJidsSameUser(sender, sess.turn)) return; // bukan gilirannya
-
-    const num = parseInt(text.split(/\s+/)[1], 10);
-    if (!(num >= 1 && num <= 9)) return;
+    if (!areJidsSameUser(sender, sess.turn)) return false; // bukan gilirannya
+    if (!(num >= 1 && num <= 9)) return false;
     const idx = num - 1;
     if (sess.board[idx] !== null) {
-      // kotak sudah terisi, kirim ulang papan
-      await sendBoardAsList(sock, chatId, sess, message, 'Kotak sudah terisi, pilih yang lain.');
-      return;
+      await sendBoardText(sock, chatId, sess, message);
+      return true;
     }
-
     const symbol = sess.turnSymbol; // 'X' atau 'O'
     sess.board[idx] = symbol;
-
     const outcome = checkOutcome(sess.board);
     if (outcome === 'X' || outcome === 'O') {
       const winner = sess.players[outcome];
-      endSession(sock, chatId, `Menang: ${mentionOne(winner)} (${outcome})\n${renderBoard(sess.board)}`);
-      return;
+      await endSession(sock, chatId, `Menang: ${mentionOne(winner)} (${outcome})\n${renderBoard(sess.board)}`);
+      return true;
     }
     if (outcome === 'draw') {
-      endSession(sock, chatId, `Seri!\n${renderBoard(sess.board)}`);
-      return;
+      await endSession(sock, chatId, `Seri!\n${renderBoard(sess.board)}`);
+      return true;
     }
-
     // Ganti giliran
     sess.turn = areJidsSameUser(sess.turn, sess.players.X) ? sess.players.O : sess.players.X;
     sess.turnSymbol = symbol === 'X' ? 'O' : 'X';
     resetTurnTimer(sock, chatId, sess);
-
     // Jika DM dan giliran bot, lakukan langkah bot otomatis
     if (sess.isDM && areJidsSameUser(sess.turn, sess.players.O)) {
       await botAutoMove(sock, chatId, sess, message);
-      return;
+      return true;
     }
-
     const msg = `Giliran: ${mentionOne(sess.turn)} (${sess.turnSymbol})`;
-    await sendBoardAsList(sock, chatId, sess, message, msg);
+    await sendBoardText(sock, chatId, sess, message, msg);
+    return true;
   } catch (err) {
-    logger?.error?.({ err }, '!ttt-move error');
+    logger?.error?.({ err }, 'tttHandleNumeric error');
+    return false;
   }
-});
+}
 
 function createSession(p1, p2, opts = {}) {
   // Jika DM dan humanStarts = true, p1 jadi X
@@ -143,32 +137,24 @@ function endSession(sock, chatId, text) {
   return sock.sendMessage(chatId, { text, mentions: sessionMentions(sess) });
 }
 
+export function tttHasSession(chatId) {
+  return sessions.has(chatId);
+}
+
 function sessionMentions(sess) {
   if (!sess) return [];
   return [sess.players.X, sess.players.O];
 }
 
-function sendBoardAsList(sock, chatId, sess, quotedMsg, header = '') {
+function sendBoardText(sock, chatId, sess, quotedMsg, header = '') {
   const boardStr = renderBoard(sess.board);
-  const avail = availableMoves(sess.board);
-  const rows = avail.map((n) => ({
-    title: `Kotak ${n}`,
-    rowId: `!ttt-move ${n}`,
-    description: `Letakkan ${sess.turnSymbol} di ${n}`,
-  }));
-  const text = [header, boardStr].filter(Boolean).join('\n');
-  const payload = {
-    text,
-    buttonText: 'Pilih Kotak',
-    sections: [
-      {
-        title: `Giliran ${sess.turnSymbol}`,
-        rows,
-      },
-    ],
-    mentions: sessionMentions(sess),
-  };
-  return sock.sendMessage(chatId, payload, quotedMsg ? { quoted: quotedMsg } : {});
+  const hint = `Pilih kotak dengan mengetik: !1 s/d !9 (Giliran ${sess.turnSymbol})`;
+  const text = [header, boardStr, hint].filter(Boolean).join('\n');
+  return sock.sendMessage(
+    chatId,
+    { text, mentions: sessionMentions(sess) },
+    quotedMsg ? { quoted: quotedMsg } : {},
+  );
 }
 
 function renderBoard(b) {
@@ -267,7 +253,7 @@ async function botAutoMove(sock, chatId, sess, quotedMsg) {
 
   if (pick == null || pick < 0) {
     // tidak ada langkah?
-    await sendBoardAsList(sock, chatId, sess, quotedMsg);
+    await sendBoardText(sock, chatId, sess, quotedMsg);
     return;
   }
 
@@ -285,7 +271,7 @@ async function botAutoMove(sock, chatId, sess, quotedMsg) {
   sess.turn = sess.players.X;
   sess.turnSymbol = 'X';
   resetTurnTimer(sock, chatId, sess);
-  await sendBoardAsList(sock, chatId, sess, quotedMsg, `Giliran: ${mentionOne(sess.turn)} (${sess.turnSymbol})`);
+  await sendBoardText(sock, chatId, sess, quotedMsg, `Giliran: ${mentionOne(sess.turn)} (${sess.turnSymbol})`);
 }
 
 function findWinningMove(b, symbol) {

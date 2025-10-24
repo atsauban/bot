@@ -33,9 +33,9 @@ registerCommand('!tebak', async ({ sock, message, text }) => {
     const guess = parseGuess(text);
     let session = sessions.get(chatId);
 
-    // Tanpa angka: hanya mulai sesi baru jika belum ada; jika sudah ada, abaikan
+    // Tanpa angka: mulai sesi baru jika belum ada; jika sudah ada, tetap silent
     if (guess === null) {
-      if (session) return; // abaikan, lanjutkan sesi sebelumnya
+      if (session) return;
       session = startSession(chatId);
       await sock.sendMessage(
         chatId,
@@ -52,21 +52,12 @@ registerCommand('!tebak', async ({ sock, message, text }) => {
   }
 });
 
-// Daftarkan shorthand !1 .. !10
-for (let n = 1; n <= 10; n++) {
-  registerCommand(`!${n}`, async ({ sock, message }) => {
-    try {
-      await handleGuess(sock, message, n);
-    } catch (err) {
-      console.error('!n guess error', err);
-    }
-  });
-}
+// Numeric handling now delegated via numeric router
 
-async function handleGuess(sock, message, guess) {
+export async function tebakHandleNumeric(sock, message, guess) {
   const chatId = message.key.remoteJid;
   let session = sessions.get(chatId);
-  if (!session) session = startSession(chatId);
+  if (!session) return; // tetap silent jika belum ada sesi
 
   session.attempts += 1;
   const target = session.target;
@@ -85,4 +76,8 @@ async function handleGuess(sock, message, guess) {
   // Berikan klu
   const clue = guess < target ? 'Terlalu kecil. Klu: lebih besar ⬆️' : 'Terlalu besar. Klu: lebih kecil ⬇️';
   await sock.sendMessage(chatId, { text: clue }, { quoted: message });
+}
+
+export function tebakHasSession(chatId) {
+  return sessions.has(chatId);
 }
