@@ -223,7 +223,7 @@ function tttSessionMentions(sess) {
 
 async function tttSendBoardText(sock, chatId, sess, quotedMsg, header = '') {
   const boardStr = tttRenderBoard(sess.board);
-  const hint = `Pilih kotak dengan mengetik: !1 s/d !9 (Giliran ${sess.turnSymbol})\nAtau klik tombol di bawah.`;
+  const hint = `Pilih kotak dengan mengetik: !1 s/d !9 (Giliran ${sess.turnSymbol})`;
   const text = [header, boardStr, hint].filter(Boolean).join('\n');
   await sock.sendMessage(
     chatId,

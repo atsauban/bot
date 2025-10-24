@@ -22,6 +22,45 @@ registerCommand('!stiker', async ({ sock, message, logger }) => {
   }
 });
 
+// Ubah stiker (webp) menjadi gambar (png)
+registerCommand('!img', async ({ sock, message, logger }) => {
+  try {
+    const chatId = message.key.remoteJid;
+    const sticker = findStickerInMessage(message.message) || findStickerInMessage(message.message?.extendedTextMessage?.contextInfo?.quotedMessage);
+    if (!sticker) return; // silent jika tidak ada stiker
+
+    const webpBuf = await downloadBuffer(sticker, 'sticker');
+    let pngBuf = null;
+
+    // Coba sharp terlebih dahulu
+    try {
+      const mod = await import('sharp');
+      const sharp = mod?.default || mod;
+      pngBuf = await sharp(webpBuf).png().toBuffer();
+    } catch {}
+
+    // Fallback ke jimp bila sharp tidak tersedia/ gagal
+    if (!pngBuf) {
+      try {
+        const mod = await import('jimp');
+        const Jimp = mod?.Jimp || mod.default || mod;
+        const img = await Jimp.read(webpBuf);
+        pngBuf = await img.getBufferAsync(Jimp.MIME_PNG);
+      } catch {}
+    }
+
+    if (!pngBuf) {
+      // Sampaikan info ringan agar pengguna tahu dependensi
+      await sock.sendMessage(chatId, { text: 'Gagal mengonversi stiker ke gambar. Pastikan modul sharp atau jimp tersedia.' }, { quoted: message });
+      return;
+    }
+
+    await sock.sendMessage(chatId, { image: pngBuf }, { quoted: message });
+  } catch (err) {
+    logger?.error?.({ err }, 'Gagal mengonversi stiker ke gambar');
+  }
+});
+
 function findFromQuoted(msg) {
   const ctx =
     msg?.extendedTextMessage?.contextInfo ||
@@ -33,6 +72,12 @@ function findFromQuoted(msg) {
   return findMediaInMessage(quoted);
 }
 
+function findStickerInMessage(msg) {
+  if (!msg) return null;
+  if (msg.stickerMessage) return msg.stickerMessage;
+  return null;
+}
+
 function findMediaInMessage(msg) {
   if (!msg) return null;
   if (msg.imageMessage) return { type: 'image', content: msg.imageMessage };
@@ -41,6 +86,13 @@ function findMediaInMessage(msg) {
 }
 
 async function downloadMediaBuffer(content, type) {
+  const stream = await downloadContentFromMessage(content, type);
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+async function downloadBuffer(content, type) {
   const stream = await downloadContentFromMessage(content, type);
   const chunks = [];
   for await (const chunk of stream) chunks.push(chunk);
@@ -66,4 +118,3 @@ async function sendStickerFromMedia(sock, message, media) {
   const webp = await sticker.build();
   await sock.sendMessage(message.key.remoteJid, { sticker: webp }, { quoted: message });
 }
-
