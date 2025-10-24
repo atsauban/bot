@@ -1,6 +1,5 @@
 import { registerCommand } from './registry.js';
-import { tttHandleNumeric, tttHasSession } from './ttt.js';
-import { tebakHandleNumeric, tebakHasSession } from './game.js';
+import { tttHandleNumeric, tttHasSession, tebakHandleNumeric, tebakHasSession } from './game.js';
 
 function registerNumeric(n) {
   registerCommand(`!${n}`, async ({ sock, message, logger }) => {
@@ -23,4 +22,3 @@ function registerNumeric(n) {
 }
 
 for (let i = 1; i <= 9; i++) registerNumeric(i);
-

@@ -9,7 +9,6 @@ import './group.js';
 import './reminder.js';
 import './spam.js';
 import './ai.js';
-import './ttt.js';
 import './help.js';
 import './numeric.js';
 

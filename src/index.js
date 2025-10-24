@@ -147,6 +147,11 @@ function extractText(message) {
   if (msg.buttonsResponseMessage?.selectedButtonId) {
     return msg.buttonsResponseMessage.selectedButtonId.trim();
   }
+  if (msg.buttonsResponseMessage?.selectedDisplayText) {
+    const disp = msg.buttonsResponseMessage.selectedDisplayText.trim();
+    if (/^\d+$/.test(disp)) return `!${disp}`;
+    return disp;
+  }
   if (msg.listResponseMessage?.singleSelectReply?.selectedRowId) {
     return msg.listResponseMessage.singleSelectReply.selectedRowId.trim();
   }
