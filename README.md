@@ -3,6 +3,7 @@
 Bot WhatsApp berbasis `@whiskeysockets/baileys` dengan konsep silent: hanya merespons perintah, tanpa balasan default/error ke user. Mendukung login via QR atau Kode Pairing, modular commands, fitur grup, game sederhana, dan utilitas.
 
 ## Instalasi
+
 ```bash
 cd /root/bot
 npm install
@@ -10,12 +11,15 @@ cp .env.example .env
 ```
 
 ## Menjalankan
+
 ```bash
 npm start
 ```
+
 Scan QR yang muncul di terminal (WhatsApp > Perangkat tertaut). Lalu kirim `!ping` ke bot (termasuk dari nomor bot sendiri).
 
 Perintah yang tersedia saat ini:
+
 - `!ping` → uji nyala + tampilkan latency.
 - `!status` → info server (CPU, RAM, disk, uptime, load average).
 - `!stiker` → balas gambar/video (≤12s) atau kirim media ber-caption `!stiker` untuk ubah jadi stiker.
@@ -28,9 +32,10 @@ Perintah yang tersedia saat ini:
 - `!reminder-list` → lihat daftar reminder pending di chat ini (bot-only).
 - `!reminder-cancel <id|index>` → batalkan reminder pending (bot-only).
 - `!spam <jumlah> <pesan>` → kirim pesan berulang di chat (maks 100, jeda ~150ms; bot-only).
- - `!ai <prompt>` → jawaban AI menggunakan Groq (bot-only). Set `GROQ_API_KEY` dan `AI_MODEL`.
+- `!ai <prompt>` → jawaban AI menggunakan Groq (bot-only). Set `GROQ_API_KEY` dan `AI_MODEL`.
 
 Fitur grup:
+
 - Akses dasar (boleh oleh pengirim admin atau pesan dari akun bot sendiri):
   - `!groupinfo` → info grup (owner ditampilkan sebagai mention), jumlah anggota, deskripsi, waktu dibuat.
   - `!list` → daftar anggota dalam bentuk mention; dipecah jika terlalu panjang.
@@ -45,11 +50,14 @@ Fitur grup:
   - `!demote [mention/reply/nomor...]` → turunkan admin; feedback “(tag) dikick dari atmin”.
 
 Catatan kebijakan grup:
+
 - Jika setelan grup “hanya admin yang boleh ubah info” dan bot bukan admin, perintah `!setname/!setdesc/!setpic` akan diabaikan (tanpa balasan).
 - Aksi partisipan (add/kick/promote/demote) tetap silent bila tidak memenuhi syarat (bot bukan admin, target tidak valid, dsb.).
 
 ### Pilih Metode: QR atau Kode Pairing
+
 Setel di `.env`:
+
 ```
 # QR saja
 AUTH_METHOD=qr
@@ -64,6 +72,7 @@ PAIR_PHONE_NUMBER=62xxxxxxxxxxx  # opsional
 ```
 
 #### Pairing dengan Nomor (tanpa QR)
+
 1. Edit `.env` dan isi:
    - `AUTH_METHOD=pairing`
    - `PAIR_PHONE_NUMBER=62xxxxxxxxxxx`
@@ -72,13 +81,16 @@ PAIR_PHONE_NUMBER=62xxxxxxxxxxx  # opsional
 4. Setelah tersambung, kode tidak diperlukan lagi karena kredensial tersimpan di `storage/auth`.
 
 ## Reset Login
+
 Hapus kredensial lalu start lagi untuk QR baru:
+
 ```bash
 rm -rf storage/auth/*
 npm start
 ```
 
 ## Catatan
+
 - Variabel `.env`:
   - `AUTH_FOLDER` (default `./storage/auth`)
   - `LOG_LEVEL` (default `info`)
@@ -89,6 +101,7 @@ npm start
   - `GROQ_API_KEY` (wajib untuk `!ai`), `AI_MODEL` (default `llama-3.1-8b-instant`)
 
 ### Penyimpanan & Scheduler
+
 - Reminder disimpan di file database: `storage/data/reminders.db` (NeDB, tanpa server terpisah).
 - Saat bot tersambung, scheduler memuat reminder pending dan menjadwalkannya kembali otomatis.
 - Reminder menggunakan zona waktu server. Jika jam sudah lewat, reminder dijadwalkan untuk hari berikutnya.
@@ -121,10 +134,42 @@ Jalankan `npm install` di direktori project untuk memasang semua paket pada `pac
   - Git LFS (untuk repo besar) — jika Anda ingin melacak aset binary besar di Git
 
 Catatan:
+
 - Node.js 18+ direkomendasikan (agar `fetch` global tersedia dan kompatibilitas ESM lebih baik).
 - `ffmpeg-static` sudah menyertakan binary ffmpeg; tidak perlu install ffmpeg sistem terpisah.
 
+## Struktur Proyek
+
+```
+src/
+  core/                 # inti aplikasi
+    config.js           # muatan .env, path auth, opsi pairing, dsb.
+    logger.js           # logger (pino) dengan pretty-print saat TTY
+  platform/
+    wa/
+      extract.js        # helper ekstraksi teks dari berbagai tipe pesan Baileys
+  commands/             # fitur perintah (modular, silent default)
+    index.js            # registrasi command
+    registry.js         # peta command → handler
+    *.js                # implementasi perintah (ping, status, group, game, ascii, ...)
+  db/
+    reminders.js        # penyimpanan NeDB untuk fitur reminder
+storage/
+  auth/                 # kredensial login WhatsApp (di-ignore Git)
+  data/reminders.db     # database lokal untuk reminder
+```
+
+## Tooling & Quality
+
+- ESLint + Prettier (konfigurasi disertakan):
+  - Lint: `npm run lint`
+  - Format: `npm run format`
+  - Cek format: `npm run format:check`
+- Husky pre-commit akan menjalankan lint dan cek format (aktif setelah `npm install`).
+- EditorConfig tersedia untuk menyamakan style di editor.
+
 ## Menjalankan dengan PM2 (opsional)
+
 ```bash
 npm run pm2:start   # start sebagai service
 npm run pm2:logs    # lihat log

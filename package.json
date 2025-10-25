@@ -6,7 +6,16 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky install",
+    "test": "node --test",
+    "pm2:start": "pm2 start npm --name whatsapp-bot -- start",
+    "pm2:logs": "pm2 logs whatsapp-bot",
+    "pm2:stop": "pm2 stop whatsapp-bot"
   },
   "keywords": [
     "whatsapp",
@@ -16,6 +25,7 @@
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.6",
+    "aki-api": "^7.0.1",
     "dotenv": "^16.4.5",
     "ffmpeg-static": "^5.2.0",
     "figlet": "^1.7.0",
@@ -26,5 +36,12 @@
     "pino-pretty": "^10.3.1",
     "qrcode-terminal": "^0.12.0",
     "wa-sticker-formatter": "^4.4.4"
+  },
+  "devDependencies": {
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.6",
+    "prettier": "^3.3.3"
   }
 }

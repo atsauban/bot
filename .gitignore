@@ -6,7 +6,6 @@ storage/auth/
 # storage/data/reminders.db
 
 # Node artifacts
-node_modules/
 npm-debug.log*
 yarn-error.log*
 
