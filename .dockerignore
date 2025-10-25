@@ -1,0 +1,12 @@
+# Keep image lean
+node_modules
+npm-debug.log*
+yarn-error.log*
+.git
+.gitignore
+.env
+storage/auth
+storage/data
+**/*.swp
+**/*.tmp
+**/*.log

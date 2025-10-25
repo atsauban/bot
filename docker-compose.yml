@@ -1,0 +1,16 @@
+services:
+  bot:
+    build: .
+    image: whatsapp-bot:latest
+    container_name: whatsapp-bot
+    env_file:
+      - .env
+    volumes:
+      - ./storage/auth:/app/storage/auth
+      - ./storage/data:/app/storage/data
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
