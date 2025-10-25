@@ -9,6 +9,26 @@ export function botOnly(message) {
   return Boolean(message?.key?.fromMe);
 }
 
+export function isOwner(message) {
+  // Owner default: fromMe (akun bot itu sendiri)
+  if (message?.key?.fromMe) return true;
+  // Tambahan: cek daftar OWNER_* dari .env
+  try {
+    const sender = String(
+      message?.key?.participant || message?.participant || message?.key?.remoteJid || '',
+    );
+    const base = baseKey(sender);
+    if (!base) return false;
+    return config.ownerBaseKeys?.has?.(base) || false;
+  } catch {
+    return false;
+  }
+}
+
+export function ownerOnly(message) {
+  return isOwner(message);
+}
+
 export async function isAdmin(sock, groupJid, participantJid) {
   try {
     const meta = await sock.groupMetadata(groupJid);
@@ -75,4 +95,10 @@ export function normalizeMsisdn(num, cc = '62') {
   if (n.startsWith('0')) return cc + n.slice(1);
   if (n.startsWith('8')) return cc + n;
   return n;
+}
+
+function baseKey(jidOrNum = '') {
+  const s = String(jidOrNum || '');
+  const node = (s.includes('@') ? s.split('@')[0] : s).split(':')[0];
+  return node.replace(/[^\d]/g, '');
 }

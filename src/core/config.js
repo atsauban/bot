@@ -76,6 +76,22 @@ const aiModel = process.env.AI_MODEL || 'llama-3.1-8b-instant';
 const akiDefaultRegion = (process.env.AKI_DEFAULT_REGION || 'en').toLowerCase();
 const akiProxy = process.env.AKI_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '';
 
+// Owner list (optional). Comma-separated JIDs or phone numbers.
+function parseOwnerBaseKeys(raw = '') {
+  const out = new Set();
+  if (!raw) return out;
+  for (const token of String(raw).split(/[,\s]+/)) {
+    const t = (token || '').trim();
+    if (!t) continue;
+    const base = normalizeKey(t).replace(/[^\d]/g, '');
+    if (base) out.add(base);
+  }
+  return out;
+}
+const ownerBaseKeys = parseOwnerBaseKeys(
+  process.env.OWNER_JIDS || process.env.OWNERS || process.env.OWNER || '',
+);
+
 export default {
   authFolder,
   logLevel,
@@ -89,4 +105,5 @@ export default {
   aiModel,
   akiDefaultRegion,
   akiProxy,
+  ownerBaseKeys,
 };

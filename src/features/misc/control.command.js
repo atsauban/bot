@@ -1,5 +1,5 @@
 import { registerCommand } from '../../core/commands.js';
-import { botOnly } from '../../core/guards.js';
+import { ownerOnly } from '../../core/guards.js';
 import {
   isGlobalEnabled,
   setGlobalEnabled,
@@ -8,7 +8,7 @@ import {
 } from '../../core/state.js';
 
 registerCommand('!bot', async ({ sock, message, text }) => {
-  if (!botOnly(message)) return; // hanya nomor bot sendiri
+  if (!ownerOnly(message)) return; // hanya owner
   const chatId = message.key.remoteJid;
   const args = String(text || '')
     .trim()
