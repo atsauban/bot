@@ -109,28 +109,47 @@ registerCommand('!akinator', async ({ sock, message, text, logger }) => {
 });
 
 async function startAkiSession(Aki, region, logger) {
-  const aki = new Aki({ region, childMode: false, proxyOptions: config.akiProxy || undefined });
+  // Buat instance tanpa proxy internal (agar bisa dukung SOCKS juga)
+  const aki = new Aki({ region, childMode: false });
   const origin = `https://${region}.akinator.com`;
-  aki.config = {
-    ...(aki.config || {}),
-    headers: {
-      ...(aki.config?.headers || {}),
-      'User-Agent':
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      Referer: origin + '/game',
-      Origin: origin,
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'same-origin',
-    },
+  const headers = {
+    'User-Agent':
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    Referer: origin + '/game',
+    Origin: origin,
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-origin',
   };
+  aki.config = { ...(aki.config || {}), headers };
+  const proxyUrl = config.akiProxy;
+  if (proxyUrl) {
+    try {
+      const agent = await buildProxyAgent(proxyUrl);
+      aki.config = { ...(aki.config || {}), httpsAgent: agent, proxy: false, headers };
+    } catch (e) {
+      logger?.warn?.({ e }, 'Gagal membangun proxy agent untuk Akinator');
+    }
+  }
   await aki.start();
   return { aki, lang: region };
+}
+
+async function buildProxyAgent(proxyUrl) {
+  const u = new URL(proxyUrl);
+  if (u.protocol.startsWith('socks')) {
+    const mod = await import('socks-proxy-agent');
+    const SocksProxyAgent = mod.SocksProxyAgent || mod.default || mod;
+    return new SocksProxyAgent(proxyUrl);
+  }
+  const mod = await import('https-proxy-agent');
+  const HttpsProxyAgent = mod.HttpsProxyAgent || mod.default || mod;
+  return new HttpsProxyAgent(proxyUrl);
 }
 
 async function sendQuestion(sock, chatId, sess, quoted, header = '') {
