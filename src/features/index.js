@@ -7,6 +7,7 @@ import './weather/weather.command.js';
 import './ascii/ascii.command.js';
 import './game/game.command.js';
 import './game/numeric.router.js';
+import './game/quiz.command.js';
 import './group/group.command.js';
 import './reminder/reminder.command.js';
 import './misc/spam.command.js';
