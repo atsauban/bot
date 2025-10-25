@@ -72,9 +72,6 @@ const pnMap = parsePnMap(process.env.PN_MAP || '');
 const defaultCountryCode = (process.env.DEFAULT_COUNTRY_CODE || '62').replace(/[^\d]/g, '') || '62';
 const groqApiKey = process.env.GROQ_API_KEY || '';
 const aiModel = process.env.AI_MODEL || 'llama-3.1-8b-instant';
-// Akinator options
-const akiDefaultRegion = (process.env.AKI_DEFAULT_REGION || 'en').toLowerCase();
-const akiProxy = process.env.AKI_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '';
 
 // Owner list (optional). Comma-separated JIDs or phone numbers.
 function parseOwnerBaseKeys(raw = '') {
@@ -103,7 +100,5 @@ export default {
   defaultCountryCode,
   groqApiKey,
   aiModel,
-  akiDefaultRegion,
-  akiProxy,
   ownerBaseKeys,
 };

@@ -1,6 +1,6 @@
 # Bot WhatsApp (Baileys)
 
-Bot WhatsApp berbasis `@whiskeysockets/baileys` dengan konsep silent: hanya merespons perintah, tanpa balasan default/error ke user. Mendukung login via QR atau Kode Pairing, modular features, fitur grup & game, utilitas server, AI (Groq), hingga Akinator.
+Bot WhatsApp berbasis `@whiskeysockets/baileys` dengan konsep silent: hanya merespons perintah, tanpa balasan default/error ke user. Mendukung login via QR atau Kode Pairing, modular features, fitur grup & game, utilitas server, dan AI (Groq).
 
 ## Instalasi
 
@@ -30,7 +30,6 @@ Perintah yang tersedia saat ini (ringkas):
 - `!ascii` saat reply/kirim gambar → konversi gambar → ASCII (WhatsApp‑friendly, auto chunk).
 - Game: `!tebak` (tebak angka 1–10; tebak via `!1.. !10`).
 - Game: `!ttt` (Tic‑Tac‑Toe) — DM vs bot atau grup vs mention; langkah via `!1.. !9`.
-- Game: `!akinator [region]` — main Akinator; jawab via `!1.. !5`; `!akinator back|stop` untuk kontrol.
 - Reminder: `!reminder <pesan> <HH:MM>`, `!reminder-list`, `!reminder-cancel <id|index>` (bot‑only).
 - `!spam <jumlah> <pesan>` (bot‑only).
 - `!ai <prompt>` (Groq; bot‑only; set `GROQ_API_KEY`).
@@ -100,8 +99,6 @@ npm start
   - `DEFAULT_COUNTRY_CODE` (default `62`) untuk normalisasi nomor lokal pada fitur grup
   - `PN_MAP` (opsional) peta LID→PN untuk tampilan nomor jika perlu
   - `GROQ_API_KEY` (wajib untuk `!ai`), `AI_MODEL` (default `llama-3.1-8b-instant`)
-  - `AKI_DEFAULT_REGION` (default `en`) — region awal Akinator. Pilihan: `en, ar, cn, de, es, fr, il, it, jp, kr, nl, pl, pt, ru, tr, id`.
-  - `AKI_PROXY` (opsional) — HTTP/HTTPS proxy untuk menghindari blokir (403) dari Akinator, contoh: `http://user:pass@host:port`.
 
 ### Penyimpanan & Scheduler
 
@@ -123,7 +120,6 @@ Jalankan `npm install` di direktori project untuk memasang semua paket pada `pac
   - `wa-sticker-formatter` — buat stiker (webp) dari gambar/video
   - `ffmpeg-static`, `fluent-ffmpeg` — konversi media untuk stiker video (≤12s)
   - `figlet` — render ASCII art untuk `!ascii`
-  - `aki-api` — Akinator API (membutuhkan internet; beberapa region dapat memblokir IP VPS)
 
 - Penyimpanan lokal
   - `nedb-promises` — database file untuk `!reminder`
@@ -182,14 +178,6 @@ npm run pm2:start   # start sebagai service
 npm run pm2:logs    # lihat log
 npm run pm2:stop    # hentikan service
 ```
-
-## Akinator
-
-- Mulai permainan: `!akinator` atau `!akinator id` (region opsional).
-- Jawaban:
-  - `!1` = Ya, `!2` = Tidak, `!3` = Tidak tahu, `!4` = Mungkin, `!5` = Mungkin tidak
-- Kontrol: `!akinator back` (mundur 1 langkah), `!akinator stop` (akhiri sesi).
-- Catatan blokir (403): beberapa region/IP VPS diblokir oleh Akinator. Bot akan mencoba fallback region otomatis. Jika tetap 403, set env `AKI_PROXY` ke proxy yang valid.
 
 ## Catatan Repository
 

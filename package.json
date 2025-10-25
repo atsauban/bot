@@ -25,9 +25,7 @@
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.6",
-    "aki-api": "^7.0.1",
     "dotenv": "^16.4.5",
-    "socks-proxy-agent": "^8.0.4",
     "ffmpeg-static": "^5.2.0",
     "figlet": "^1.7.0",
     "fluent-ffmpeg": "^2.1.2",

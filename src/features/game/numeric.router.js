@@ -5,16 +5,11 @@ import {
   tebakHandleNumeric,
   tebakHasSession,
 } from './game.command.js';
-import { akinatorHandleNumeric, akinatorHasSession } from './akinator.command.js';
 
 function registerNumeric(n) {
   registerCommand(`!${n}`, async ({ sock, message, logger }) => {
     try {
       const chatId = message.key.remoteJid;
-      if (akinatorHasSession(chatId)) {
-        const handled = await akinatorHandleNumeric(sock, message, n, logger);
-        if (handled) return;
-      }
       if (tttHasSession(chatId)) {
         const handled = await tttHandleNumeric(sock, message, n, logger);
         if (handled) return;
