@@ -1,5 +1,6 @@
 // Mengimpor modul di bawah ini akan mendaftarkan command via side-effect
 import './misc/ping.command.js';
+import './misc/control.command.js';
 import './system/status.command.js';
 import './sticker/sticker.command.js';
 import './weather/weather.command.js';

@@ -4,6 +4,7 @@ import './features/index.js';
 import { findCommand } from './core/commands.js';
 import { bindReminderScheduler } from './features/reminder/reminder.command.js';
 import { startWaClient } from './platform/wa/client.js';
+import { shouldProcess } from './core/state.js';
 
 const logger = createLogger(config.logLevel);
 
@@ -20,6 +21,8 @@ async function startBot() {
       }
     },
     onText: async (text, { sock, message }) => {
+      const chatId = message.key.remoteJid;
+      if (!shouldProcess(text, chatId)) return;
       const handler = findCommand(text);
       if (!handler) return;
       try {
